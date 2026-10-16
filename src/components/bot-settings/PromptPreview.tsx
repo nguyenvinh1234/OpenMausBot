@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/cn";
+import { t } from "@/lib/i18n";
 
 export interface PromptPreviewData {
   sections: Array<{ id: string; label: string; text: string; bytes: number }>;
@@ -30,17 +31,20 @@ export function PromptPreview({
       >
         <span className="text-[15px] font-medium text-ink">
           {data
-            ? `Prompt preview · ${data.totalBytes.toLocaleString()} bytes ≈ ${data.approxTokens.toLocaleString()} tokens`
-            : "Prompt preview"}
+            ? t("botOverview.promptPreviewWithStats", {
+              bytes: data.totalBytes.toLocaleString(),
+              tokens: data.approxTokens.toLocaleString(),
+            })
+            : t("botOverview.promptPreview")}
         </span>
         <ChevronDown size={16} className={cn("shrink-0 text-ink-secondary transition-transform", open && "rotate-180")} />
       </button>
 
       {open && !data && error && (
-        <div className="mt-3 text-[13px] text-ink-secondary">Couldn’t load the prompt preview.</div>
+        <div className="mt-3 text-[13px] text-ink-secondary">{t("botOverview.promptPreviewError")}</div>
       )}
 
-      {open && !data && !error && <div className="mt-3 text-[13px] text-ink-secondary">Loading…</div>}
+      {open && !data && !error && <div className="mt-3 text-[13px] text-ink-secondary">{t("botOverview.loading")}</div>}
 
       {open && data && (
         <div className="mt-3 flex flex-col gap-2">

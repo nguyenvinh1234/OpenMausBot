@@ -63,13 +63,13 @@ function WorkingFolder({ bot }: { bot: Bot }) {
 
   return (
     <div className="rounded-xl bg-card p-4">
-      <div className="text-[15px] font-medium text-ink">Working folder</div>
-      <div className="mt-0.5 text-[13px] text-ink-secondary">Where this bot runs its shell and file tools.</div>
+      <div className="text-[15px] font-medium text-ink">{t("botAccess.workingFolder.folder")}</div>
+      <div className="mt-0.5 text-[13px] text-ink-secondary">{t("botAccess.workingFolder.detail")}</div>
       <ProposalStatus bot={bot} kind="chief" />
       {canPick ? (
         <div className="mt-3 flex items-center gap-2">
           <div className="min-w-0 flex-1 truncate rounded-lg border border-hairline/40 bg-inset px-3 py-2 font-mono text-[12.5px] text-ink" title={bot.cwd}>
-            {bot.cwd ? shortPath(bot.cwd, home) : <span className="text-ink-secondary">Private bot folder</span>}
+            {bot.cwd ? shortPath(bot.cwd, home) : <span className="text-ink-secondary">{t("botAccess.workingFolder.private")}</span>}
           </div>
           <button onClick={() => void pick()} disabled={saving} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-control px-3 py-2 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50">
             <FolderOpen size={14} /> Choose…
@@ -90,19 +90,19 @@ function WorkingFolder({ bot }: { bot: Bot }) {
         >
           <input
             className={cn(inputCls, "font-mono text-[12.5px]")}
-            placeholder="Private bot folder — or an absolute path"
+            placeholder={t("botAccess.workingFolder.placeholder")}
             value={draft ?? bot.cwd ?? ""}
             onChange={(e) => setDraft(e.target.value)}
           />
           <button type="submit" disabled={saving || draft === null} className="shrink-0 rounded-lg bg-control px-3 py-2 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50">
-            Save
+            {t("common.save")}
           </button>
         </form>
       )}
       {error && <div className="mt-2 text-[12px] text-danger">{error}</div>}
       {pinnedElsewhere && (
         <div className="mt-2 text-[12px] text-ink-secondary">
-          New tasks start here. This task is pinned to {pinned ? <span className="font-mono">{shortPath(pinned, home)}</span> : "the home folder"} — start a new task to use the new folder.
+          {t("botAccess.workingFolder.newTasks", { path: pinned ? shortPath(pinned, home) : t("botAccess.workingFolder.home") })}
         </div>
       )}
     </div>
@@ -703,11 +703,11 @@ export function AccessSection({
       </div>
 
       {!draft && <div className="rounded-xl bg-card p-4">
-        <div className="text-[15px] font-medium text-ink">Webhooks</div>
-        <div className="mt-0.5 text-[13px] text-ink-secondary">Inbound triggers wired to this bot.</div>
+        <div className="text-[15px] font-medium text-ink">{t("routines.webhooks")}</div>
+        <div className="mt-0.5 text-[13px] text-ink-secondary">{t("botAccess.webhooks.detail")}</div>
         <ProposalStatus bot={bot} kind="owner" />
         {webhooks.length === 0 ? (
-          <div className="mt-3 rounded-lg bg-inset px-3 py-2 text-[12px] text-ink-secondary">No webhooks for this bot.</div>
+          <div className="mt-3 rounded-lg bg-inset px-3 py-2 text-[12px] text-ink-secondary">{t("botAccess.webhooks.empty")}</div>
         ) : (
           <div className="mt-3 divide-y divide-hairline/40 overflow-hidden rounded-lg border border-hairline/40">
             {webhooks.map((webhook) => (
@@ -719,10 +719,10 @@ export function AccessSection({
                     webhook.enabled ? "bg-accent/15 text-accent-text" : "bg-control text-ink-secondary",
                   )}
                 >
-                  {webhook.enabled ? "Active" : "Paused"}
+                  {webhook.enabled ? t("botAccess.webhooks.active") : t("botAccess.webhooks.paused")}
                 </span>
                 <span className="shrink-0 text-[11.5px] tabular-nums text-ink-secondary">
-                  {webhook.deliveryCount} deliveries
+                  {t("botAccess.webhooks.deliveries", { count: webhook.deliveryCount })}
                 </span>
               </div>
             ))}
@@ -731,11 +731,11 @@ export function AccessSection({
       </div>}
 
       {!draft && <div className="rounded-xl bg-card p-4">
-        <div className="text-[15px] font-medium text-ink">Always allowed</div>
-        <div className="mt-0.5 text-[13px] text-ink-secondary">Tools this bot no longer asks about.</div>
+        <div className="text-[15px] font-medium text-ink">{t("botAccess.alwaysAllowed.title")}</div>
+        <div className="mt-0.5 text-[13px] text-ink-secondary">{t("botAccess.alwaysAllowed.detail")}</div>
         <ProposalStatus bot={bot} kind="owner" />
         {alwaysAllow.length === 0 ? (
-          <div className="mt-3 rounded-lg bg-inset px-3 py-2 text-[12px] text-ink-secondary">Nothing standing yet.</div>
+          <div className="mt-3 rounded-lg bg-inset px-3 py-2 text-[12px] text-ink-secondary">{t("botAccess.alwaysAllowed.empty")}</div>
         ) : (
           <div className="mt-3 divide-y divide-hairline/40 overflow-hidden rounded-lg border border-hairline/40">
             {alwaysAllow.map((entry) => (
@@ -743,11 +743,11 @@ export function AccessSection({
                 <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-ink">{entry}</span>
                 <button
                   type="button"
-                  aria-label={`Remove ${entry} from always allowed`}
+                  aria-label={t("botAccess.alwaysAllowed.removeAria", { entry })}
                   onClick={() => patch({ alwaysAllow: alwaysAllow.filter((key) => key !== entry) })}
                   className="shrink-0 rounded-md px-2 py-1 text-[12px] text-ink-secondary hover:bg-danger/10 hover:text-danger"
                 >
-                  Remove
+                  {t("botAccess.alwaysAllowed.remove")}
                 </button>
               </div>
             ))}
@@ -777,16 +777,16 @@ function ConnectorScopesControl({ connectedSlugs, labels = {}, scopes, onChange 
   return <div className="mt-3">
     <div className="flex items-center justify-between gap-4">
       <div className="text-[13px] text-ink-secondary">
-        {limited ? "Only the apps allowed below, at the level set for each. Everything else is off for this bot." : "No app-level limits. The tool grants below still apply."}
+        {limited ? t("botAccess.apps.limited") : t("botAccess.apps.unlimited")}
       </div>
-      <Switch checked={limited} aria-label="Limit this bot to specific apps" onClick={() => onChange(limited ? null : { apps: {} })} />
+      <Switch checked={limited} aria-label={t("botAccess.apps.limitLabel")} onClick={() => onChange(limited ? null : { apps: {} })} />
     </div>
     {limited && <div className="mt-2 flex flex-col divide-y divide-hairline/20 rounded-lg bg-inset">
-      {!slugs.length && <div className="px-3 py-2 text-[11.5px] text-ink-secondary">No apps connected yet. Connect one, then allow it here.</div>}
+      {!slugs.length && <div className="px-3 py-2 text-[11.5px] text-ink-secondary">{t("botAccess.apps.none")}</div>}
       {slugs.map((slug) => <div key={slug} className="flex flex-wrap items-center justify-between gap-3 px-3 py-1.5">
-        <span className="min-w-0 text-[13px] text-ink">{labels[slug] ?? slug}{!connectedSlugs.includes(slug) && <span className="ml-2 text-[10.5px] text-ink-secondary">not connected</span>}</span>
-        <div className="flex shrink-0 gap-0.5 rounded-md bg-card p-0.5" role="group" aria-label={`${slug} access`}>
-          {([[null, "Off", "This bot cannot use it."], ["read", "Read", "Search, fetch, and list only."], ["write", "Read & write", "Tool grants and sending limits still apply."]] as const).map(([value, label, hint]) =>
+        <span className="min-w-0 text-[13px] text-ink">{labels[slug] ?? slug}{!connectedSlugs.includes(slug) && <span className="ml-2 text-[10.5px] text-ink-secondary">{t("botAccess.apps.notConnected")}</span>}</span>
+        <div className="flex shrink-0 gap-0.5 rounded-md bg-card p-0.5" role="group" aria-label={t("botAccess.apps.accessAria", { name: slug })}>
+          {([[null, t("botAccess.apps.off"), t("botAccess.apps.offHint")], ["read", t("botAccess.apps.read"), t("botAccess.apps.readHint")], ["write", t("botAccess.apps.readWrite"), t("botAccess.apps.readWriteHint")]] as const).map(([value, label, hint]) =>
             <button key={label} type="button" title={hint} aria-pressed={(scopes?.apps[slug] ?? null) === value} onClick={() => setScope(slug, value)}
               className={cn("rounded px-2 py-0.5 text-[11.5px] font-medium", (scopes?.apps[slug] ?? null) === value ? "bg-raised text-ink" : "text-ink-secondary hover:text-ink")}>{label}</button>)}
         </div>
