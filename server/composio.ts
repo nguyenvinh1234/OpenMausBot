@@ -101,6 +101,16 @@ const toolkitPageSchema = z.object({
   next_cursor: z.string().nullable().optional(),
 });
 
+const connectorCatalogToolSchema = z.object({
+  slug: z.string(),
+  description: z.string().nullable().optional(),
+  toolkit: z.object({ slug: z.string() }),
+});
+const connectorCatalogToolsPageSchema = z.object({
+  items: z.array(connectorCatalogToolSchema),
+  next_cursor: z.string().nullable().optional(),
+});
+
 const connectorServiceSchema = z.object({
   connected: z.boolean(),
   pending: z.boolean().optional(),
@@ -889,6 +899,43 @@ let connectorServiceSlugsRequest: { identity: string; slugs: Promise<readonly st
 const TOOL_DESCRIPTION_MAX = 240;
 const TOOLS_LIST_PAGES_MAX = 10;
 
+async function collectProjectConnectorTools(
+  apiKey: string,
+  services: Record<string, ConnectorServiceState>,
+): Promise<Record<string, ConnectorToolListing[]>> {
+  const connected = Object.entries(services)
+    .filter(([, state]) => state.connected)
+    .map(([slug]) => canonicalToolkitSlug(slug));
+  if (!connected.length) return {};
+  const allowed = new Set(connected);
+  const grouped = new Map<string, ConnectorToolListing[]>();
+  let cursor: string | undefined;
+  for (let page = 0; page < TOOLS_LIST_PAGES_MAX; page += 1) {
+    const params = new URLSearchParams({ toolkit_slug: connected.join(","), limit: "1000" });
+    if (cursor) params.set("cursor", cursor);
+    const res = await fetch(`${apiBase()}/tools?${params}`, {
+      headers: projectHeaders(apiKey),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(await responseError(res, `Composio tools: HTTP ${res.status}`));
+    const body = connectorCatalogToolsPageSchema.parse(await res.json());
+    for (const tool of body.items) {
+      const slug = canonicalToolkitSlug(tool.toolkit.slug);
+      if (!allowed.has(slug) || !CONNECTOR_TOOL_NAME_PATTERN.test(tool.slug)) continue;
+      const trimmed = tool.description?.replace(/\s+/g, " ").trim().slice(0, TOOL_DESCRIPTION_MAX) ?? "";
+      const listing = trimmed ? { name: tool.slug, description: trimmed } : { name: tool.slug };
+      const bucket = grouped.get(slug) ?? [];
+      if (!bucket.some((existing) => existing.name === listing.name)) bucket.push(listing);
+      grouped.set(slug, bucket);
+    }
+    const next = body.next_cursor ?? undefined;
+    if (!next || next === cursor) break;
+    cursor = next;
+  }
+  for (const bucket of grouped.values()) bucket.sort((a, b) => a.name.localeCompare(b.name));
+  return Object.fromEntries([...grouped.entries()].sort(([a], [b]) => a.localeCompare(b)));
+}
+
 function connectorToolListing(tool: unknown): ConnectorToolListing | null {
   if (!tool || typeof tool !== "object" || Array.isArray(tool)) return null;
   const name = (tool as { name?: unknown }).name;
@@ -905,6 +952,16 @@ function connectorToolListing(tool: unknown): ConnectorToolListing | null {
 async function collectConnectorTools(cfg: AppConfig): Promise<Record<string, ConnectorToolListing[]>> {
   const connected = await connectedServices(cfg).catch(() => null);
   const candidates = connected ? Object.keys(connected) : [];
+  const apiKey = projectApiKey(cfg);
+  if (apiKey && connected) {
+    try {
+      return await collectProjectConnectorTools(apiKey, connected);
+    } catch {
+      // Scoped project keys may allow the Session MCP endpoint while denying
+      // the project-wide tools catalog. Preserve the legacy MCP inventory as
+      // a compatibility fallback for those installations.
+    }
+  }
   const initialize = await relayMcp(cfg, {
     jsonrpc: "2.0",
     id: "omb-grants-initialize",

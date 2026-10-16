@@ -306,6 +306,18 @@ beforeAll(async () => {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify({ items: customAuthConfigs }));
     }
+    if (req.method === "GET" && url.pathname === "/api/v3.1/tools") {
+      res.writeHead(200, { "content-type": "application/json" });
+      const requested = new Set((url.searchParams.get("toolkit_slug") ?? "").split(","));
+      return res.end(JSON.stringify({
+        items: [
+          { slug: "GITHUB_LIST_REPOS", description: "List   repositories", toolkit: { slug: "github" } },
+          { slug: "GITHUB_CREATE_ISSUE", description: "Create an issue", toolkit: { slug: "github" } },
+          { slug: "NOTION_CREATE_PAGE", description: "Pending account tool", toolkit: { slug: "notion" } },
+          { slug: "UNCONNECTED_DO_THING", description: "Not connected", toolkit: { slug: "unconnected" } },
+        ].filter((tool) => requested.has(tool.toolkit.slug)),
+      }));
+    }
     if (req.method === "GET" && url.pathname === "/api/v3.1/tool_router/session/trs_legacy") {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify({
@@ -1333,6 +1345,24 @@ describe("a connector tools/list that fails", () => {
 describe("connector tool inventory", () => {
   const initializeCalls = () =>
     calls.filter((call) => call.path.endsWith("/v1/mcp") && call.body?.method === "initialize");
+
+  it("uses the v3.1 tools catalog for connected project services", async () => {
+    const cfg: AppConfig = {
+      composio: { apiKey: "ak_test", userId: "openmausbot_existing", sessionId: "trs_test" },
+    };
+    const before = calls.length;
+    await expect(listConnectorTools(cfg, { force: true })).resolves.toEqual({
+      github: [
+        { name: "GITHUB_CREATE_ISSUE", description: "Create an issue" },
+        { name: "GITHUB_LIST_REPOS", description: "List repositories" },
+      ],
+    });
+    const request = calls.slice(before).find((call) => call.path === "/api/v3.1/tools");
+    expect(request?.query).toContain("toolkit_slug=");
+    expect(request?.query).toContain("github");
+    expect(request?.query).not.toContain("notion");
+    expect(request?.query).not.toContain("unconnected");
+  });
 
   it("groups an underscored service under its own slug using the connected services", async () => {
     setManagedBrokerAccess({ url: origin + "/broker", token: "c".repeat(64) });
