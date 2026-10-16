@@ -749,6 +749,8 @@ const SHARED_WORKSPACE_FULL_ACCESS = sharedWorkspaceFullAccessConfigured();
 const sharedWorkspaceFullAccessEnabled = () => SHARED_WORKSPACE_FULL_ACCESS && Boolean(workspaceAccess) && entitled("admin");
 const HOSTED_FULL_ACCESS_REFUSAL = "On a shared company workspace Full access comes only from the operator's dedicated policy";
 if (HOSTED_WORKSPACE) setDefaultApprovalMode("ask");
+// A self-hosted operator may keep a level (e.g. Ask) for bots that never picked one.
+else if (isApprovalMode(process.env.OMB_DEFAULT_APPROVAL_MODE)) setDefaultApprovalMode(process.env.OMB_DEFAULT_APPROVAL_MODE);
 // On a shared workspace loopback is a service, not the owner: every bot's shell is a loopback caller too.
 const LOOPBACK = resolveLoopbackTrust({ desktopManaged: DESKTOP_MANAGED, hostedWorkspace: HOSTED_WORKSPACE, cloudHome: Boolean(CLOUD_HOME) });
 // The CLI's per-launch secret comes on stdin, never an env var: every engine this server starts inherits its environment.

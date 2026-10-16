@@ -32,6 +32,8 @@ services:
       OMB_WEBHOOK_PORT: ${OMB_WEBHOOK_PORT:-8800}
       OMB_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:8080}
       OMB_WEBHOOK_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:8080}
+      # Bots that never picked an approval level keep asking (upstream: full).
+      OMB_DEFAULT_APPROVAL_MODE: ${OMB_DEFAULT_APPROVAL_MODE:-ask}
     healthcheck:
       test: [CMD-SHELL, 'curl -fsS http://127.0.0.1:$$OMB_PORT/api/health | grep -q openmausbot']
       interval: 15s
