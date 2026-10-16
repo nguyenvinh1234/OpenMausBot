@@ -7,8 +7,12 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/docs/package.json ./apps/docs/package.json
 COPY cloudflare/control-plane/package.json ./cloudflare/control-plane/package.json
+# package.json's `prepare` loads this during install (it no-ops without .git).
+COPY scripts/install-git-hooks.mjs ./scripts/install-git-hooks.mjs
 RUN pnpm install --frozen-lockfile
 COPY . .
+# The Data engine's native modules, as in the root Dockerfile.
+RUN node scripts/prepare-duckdb.mjs
 RUN pnpm build:server && pnpm exec vite build
 
 FROM node:24.15.0-bookworm-slim
@@ -36,6 +40,7 @@ RUN curl -fsSL https://github.com/podman-container-tools/podman/releases/downloa
 WORKDIR /app
 COPY --from=build --chown=maus:maus /src/dist-server ./dist-server
 COPY --from=build --chown=maus:maus /src/dist ./dist
+COPY --from=build --chown=maus:maus /src/dist-native/duckdb/linux-x64 ./duckdb
 ARG ENGINES=""
 # Always bake fallback engines: the app also installs/updates its own copies
 # under $HOME/.openmausbot/tools, and a turn started mid-update must still find
@@ -44,6 +49,7 @@ RUN npm install -g ${ENGINES:-@anthropic-ai/claude-code@2.1.283 @openai/codex@0.
 ENV HOME=/data \
     OMB_DATA_DIR=/data/.openmausbot \
     OMB_STATIC_DIR=/app/dist \
+    OMB_DUCKDB_DIR=/app/duckdb \
     OMB_PORT=8799 \
     OMB_WEBHOOK_PORT=8800 \
     NODE_ENV=production
