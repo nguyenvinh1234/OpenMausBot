@@ -13,12 +13,15 @@ services:
     shm_size: 512m
     userns_mode: keep-id:uid=1001,gid=1001
     user: "1001:1001"
+    security_opt:
+      - label=type:container_runtime_t
     restart: unless-stopped
     # On Windows this is the Linux Podman machine. The app must reach the
     # dynamically allocated, loopback-only desktop ports on that same host.
     network_mode: host
     volumes:
       - ${OMB_DATA_ROOT:?Run setup.sh first}:${OMB_DATA_ROOT}
+      - ${OMB_DATA_ROOT:?Run setup.sh first}:/data
       - ${PODMAN_SOCKET:?Run setup.sh first}:/run/omb-podman.sock
     environment:
       HOME: ${OMB_DATA_ROOT}
@@ -48,7 +51,7 @@ services:
       OMB_WEBHOOK_PORT: ${OMB_WEBHOOK_PORT:-8800}
       OMB_HTTPS_HOST: ${OMB_HTTPS_HOST:-https-disabled.invalid}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,Z
       - caddy_data:/data
       - caddy_config:/config
 volumes:
