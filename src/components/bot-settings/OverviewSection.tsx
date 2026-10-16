@@ -12,6 +12,24 @@ import { whenLabel } from "@/lib/schedule-label";
 import type { BotSettingsSection } from "@/state/store";
 import { PromptPreview, type PromptPreviewData } from "./PromptPreview";
 
+function overviewLine(line: string): string {
+  if (line === "Works in its private workspace.") return t("botOverview.worksPrivate");
+  if (line === "Has the built-in browser.") return t("botOverview.builtInBrowser");
+  if (line === "Command approvals use Ask mode; saved permissions and provider rules still apply.") return t("botOverview.approvalsAsk");
+  if (line === "Command approvals follow the provider's custom configuration.") return t("botOverview.approvalsCustom");
+  if (line === "Won't act on a schedule.") return t("botOverview.noSchedule");
+  if (line === "Profile proposal cards require your approval.") return t("botOverview.profileApproval");
+  return line;
+}
+
+function setupLabel(label: string): string {
+  if (label === "Give it a name and a role") return t("botOverview.setupName");
+  if (label === "Write its standing instructions") return t("botOverview.setupSoul");
+  if (label === "Choose a working folder") return t("botOverview.setupFolder");
+  if (label === "Add a schedule or a trigger") return t("botOverview.setupSchedule");
+  return label;
+}
+
 export function OverviewSection({
   overview,
   refreshError,
@@ -31,7 +49,7 @@ export function OverviewSection({
   const [promptOpen, setPromptOpen] = useState(false);
 
   if (!overview) {
-    return <div className="text-[13px] text-ink-secondary">Loading…</div>;
+    return <div className="text-[13px] text-ink-secondary">{t("botOverview.loading")}</div>;
   }
 
   const setup = overview.setup ?? [];
@@ -41,7 +59,7 @@ export function OverviewSection({
     <div className="flex flex-col gap-4">
       {refreshError && (
         <div className="rounded-lg bg-inset px-3 py-2 text-[12.5px] text-ink-secondary">
-          Couldn’t refresh — showing the last loaded overview.
+          {t("botOverview.refreshError")}
         </div>
       )}
 
@@ -55,7 +73,7 @@ export function OverviewSection({
                 {!step.section ? (
                   <div className="flex items-center gap-2.5 px-1 py-1 text-[13px] text-ink">
                     <Circle aria-hidden="true" size={14} className="shrink-0 text-ink-secondary" />
-                    <span>{step.label}</span>
+                    <span>{setupLabel(step.label)}</span>
                   </div>
                 ) : (
                   <button
@@ -64,7 +82,7 @@ export function OverviewSection({
                     className="flex w-full items-center gap-2.5 rounded-lg px-1 py-1 text-left text-[13px] text-ink hover:bg-inset"
                   >
                     <Circle aria-hidden="true" size={14} className="shrink-0 text-ink-secondary" />
-                    <span className="flex-1">{step.label}</span>
+                    <span className="flex-1">{setupLabel(step.label)}</span>
                     <span className="text-[12px] text-ink-secondary">→</span>
                   </button>
                 )}
@@ -98,43 +116,43 @@ export function OverviewSection({
               onClick={() => onOpen("soul")}
               className="mt-1.5 rounded-md text-[12px] font-medium text-accent-text hover:underline"
             >
-              Read all
+              {t("botOverview.readAll")}
             </button>
           </div>
         )}
       </div>
 
       <div className="rounded-xl bg-card p-4">
-        <div className="text-[15px] font-medium text-ink">Does</div>
+        <div className="text-[15px] font-medium text-ink">{t("botOverview.does")}</div>
         {overview.does.length === 0 ? (
-          <p className="mt-2 text-[13px] text-ink-secondary">Nothing scheduled or learned yet.</p>
+          <p className="mt-2 text-[13px] text-ink-secondary">{t("botOverview.nothingScheduled")}</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-1.5 text-[13px] leading-relaxed text-ink">
             {overview.does.map((line, i) => (
-              <li key={i}>{line}</li>
+              <li key={i}>{overviewLine(line)}</li>
             ))}
           </ul>
         )}
       </div>
 
       <div className="rounded-xl bg-card p-4">
-        <div className="text-[15px] font-medium text-ink">Can reach</div>
+        <div className="text-[15px] font-medium text-ink">{t("botOverview.canReach")}</div>
         {overview.reaches.length === 0 ? (
-          <p className="mt-2 text-[13px] text-ink-secondary">Nothing yet.</p>
+          <p className="mt-2 text-[13px] text-ink-secondary">{t("botOverview.nothingYet")}</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-1.5 text-[13px] leading-relaxed text-ink">
             {overview.reaches.map((line, i) => (
-              <li key={i}>{line}</li>
+              <li key={i}>{overviewLine(line)}</li>
             ))}
           </ul>
         )}
       </div>
 
       <div className="rounded-xl bg-card p-4">
-        <div className="text-[15px] font-medium text-ink">Won&rsquo;t</div>
+        <div className="text-[15px] font-medium text-ink">{t("botOverview.wont")}</div>
         <ul className="mt-2 flex flex-col gap-1.5 text-[13px] leading-relaxed text-ink">
           {overview.wont.map((line, i) => (
-            <li key={i}>{line}</li>
+            <li key={i}>{overviewLine(line)}</li>
           ))}
         </ul>
       </div>
@@ -148,22 +166,22 @@ export function OverviewSection({
 
       <div className="rounded-xl bg-card p-4">
         <div className="flex items-baseline justify-between gap-3">
-          <div className="text-[15px] font-medium text-ink">Recent changes</div>
+          <div className="text-[15px] font-medium text-ink">{t("botOverview.recentChanges")}</div>
           <button
             type="button"
             onClick={() => onOpen("history")}
             className="shrink-0 text-[12px] text-ink-secondary hover:text-ink"
           >
-            View all →
+            {t("botOverview.viewAll")}
           </button>
         </div>
         {overview.recent.length === 0 ? (
-          <p className="mt-2 text-[13px] text-ink-secondary">Nothing changed recently.</p>
+          <p className="mt-2 text-[13px] text-ink-secondary">{t("botOverview.nothingChanged")}</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-1.5 text-[13px] text-ink">
             {overview.recent.map((entry, i) => (
               <li key={i} className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate">{entry.summary}</span>
+                <span className="min-w-0 truncate">{overviewLine(entry.summary)}</span>
                 <span className="shrink-0 text-[11.5px] text-ink-secondary">· {whenLabel(entry.at)}</span>
               </li>
             ))}
