@@ -37,7 +37,10 @@ WORKDIR /app
 COPY --from=build --chown=maus:maus /src/dist-server ./dist-server
 COPY --from=build --chown=maus:maus /src/dist ./dist
 ARG ENGINES=""
-RUN if [ -n "$ENGINES" ]; then npm install -g $ENGINES; fi
+# Always bake fallback engines: the app also installs/updates its own copies
+# under $HOME/.openmausbot/tools, and a turn started mid-update must still find
+# one. compose.yaml passes ENGINES empty when unset, so default it here.
+RUN npm install -g ${ENGINES:-@anthropic-ai/claude-code@2.1.283 @openai/codex@0.158.0}
 ENV HOME=/data \
     OMB_DATA_DIR=/data/.openmausbot \
     OMB_STATIC_DIR=/app/dist \
@@ -45,4 +48,5 @@ ENV HOME=/data \
     OMB_WEBHOOK_PORT=8800 \
     NODE_ENV=production
 USER maus
-CMD ["node", "dist-server/index.js"]
+# Starts dist-server/index.js again when it asks to (server/restart.ts).
+CMD ["node", "dist-server/server-launcher.js"]
